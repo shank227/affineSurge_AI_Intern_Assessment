@@ -1,6 +1,19 @@
+from fastapi import FastAPI
+
 from app.database import Base, engine
 from app import models
+from app.routes import router
 
 Base.metadata.create_all(bind=engine)
 
-print("Database created successfully!")
+app = FastAPI(
+    title="CT-200 Document API"
+)
+app.include_router(router)
+
+
+@app.get("/")
+def home():
+    return {
+        "message": "CT-200 Document API is running."
+    }
