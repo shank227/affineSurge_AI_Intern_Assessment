@@ -182,3 +182,80 @@ def generate(selection_id: int):
     db.close()
 
     return save_output(selection_id, output)
+
+@router.get("/generated/{selection_id}")
+def get_generated_output(selection_id: int):
+
+    base_dir = Path(__file__).resolve().parent.parent
+    output_file = base_dir / "data" / "generated_outputs.json"
+
+    with open(output_file, "r") as file:
+        outputs = json.load(file)
+
+    for output in outputs:
+        if output["selection_id"] == selection_id:
+            return output
+
+    return {"message": "No generated output found"}
+
+@router.get("/staleness/{selection_id}")
+def check_staleness(selection_id: int):
+
+    base_dir = Path(__file__).resolve().parent.parent
+    selection_file = base_dir / "data" / "selections.json"
+
+    with open(selection_file, "r") as file:
+        selections = json.load(file)
+
+    selection = next(
+        (s for s in selections if s["id"] == selection_id),
+        None
+    )
+
+    if not selection:
+        return {"message": "Selection not found"}
+
+    if selection["version"] == "v2":
+        return {
+            "selection_id": selection_id,
+            "stale": False,
+            "message": "Selection already uses the latest version."
+        }
+
+    comparison = compare_versions(
+        selection["version"],
+        "v2"
+    )
+
+    changed = []
+
+    for node_id in selection["node_ids"]:
+
+        db = SessionLocal()
+
+        section = (
+            db.query(Section)
+            .filter(Section.id == node_id)
+            .first()
+        )
+
+        db.close()
+
+        if not section:
+            continue
+
+        for item in comparison["changed"]:
+            if (
+                item["section_number"] == section.section_number
+                and item["title"] == section.title
+            ):
+                changed.append({
+                    "section_number": section.section_number,
+                    "title": section.title
+                })
+
+    return {
+        "selection_id": selection_id,
+        "stale": len(changed) > 0,
+        "changed_nodes": changed
+    }
