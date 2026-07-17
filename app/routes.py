@@ -7,6 +7,11 @@ from app.versioning import compare_versions
 from pydantic import BaseModel
 from app.selection import save_selection
 
+from app.llm import generate_questions
+from app.output_store import save_output
+import json
+from pathlib import Path
+
 router = APIRouter()
 
 
@@ -139,3 +144,41 @@ def create_selection(request: SelectionRequest):
         request.version,
         request.node_ids
     )
+
+@router.post("/generate/{selection_id}")
+def generate(selection_id: int):
+
+    base_dir = Path(__file__).resolve().parent.parent
+    selection_file = base_dir / "data" / "selections.json"
+
+    with open(selection_file, "r") as file:
+        selections = json.load(file)
+
+    selection = next(
+        (s for s in selections if s["id"] == selection_id),
+        None
+    )
+
+    if not selection:
+        return {"message": "Selection not found"}
+
+    db = SessionLocal()
+
+    sections = (
+        db.query(Section)
+        .filter(Section.id.in_(selection["node_ids"]))
+        .all()
+    )
+
+    context = ""
+
+    for section in sections:
+        context += f"\n{section.title}\n"
+        context += section.content
+        context += "\n"
+
+    output = generate_questions(context)
+
+    db.close()
+
+    return save_output(selection_id, output)

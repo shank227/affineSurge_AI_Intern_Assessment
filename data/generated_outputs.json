@@ -1,0 +1,7 @@
+[
+    {
+        "id": 1,
+        "selection_id": 1,
+        "output": "Here are 5 question-answer pairs based on the given context:\n\n1. Q: What type of blood pressure monitor is the CardioTrack CT-200?\nA: The CardioTrack CT-200 is an oscillometric blood pressure monitor.\n\n2. Q: What is the maximum number of readings that the CT-200 can store?\nA: The CT-200 can store up to 200 readings across two user profiles.\n\n3. Q: Who should not use the CardioTrack CT-200?\nA: Neonates, infants, pregnant users, and users with severe arrhythmia without clinician guidance should not use the device.\n\n4. Q: What is the recommended arm circumference for using the CT-200?\nA: The recommended arm circumference for using the CT-200 is 22-42 cm.\n\n5. Q: What should be done with readings obtained from the CardioTrack CT-200?\nA: Readings obtained from the CT-200 should be interpreted by a qualified clinician."
+    }
+]
