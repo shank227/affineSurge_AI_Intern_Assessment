@@ -1,8 +1,10 @@
-import fitz  # PyMuPDF
+from pathlib import Path
+import fitz
 
-pdf_path = "C:\\Users\\shash\\OneDrive\\Desktop\\intern_assement_task\\affineSurge_AI_Intern_Assessment\\data\\ct200_manual.pdf"
+BASE_DIRECTORY = Path(__file__).resolve().parent.parent
+PDF_PATH = BASE_DIRECTORY / "data" / "ct200_manual.pdf"
 
-doc = fitz.open(pdf_path)
+doc = fitz.open(PDF_PATH)
 
 print(f"Total Pages: {len(doc)}\n")
 
