@@ -6,7 +6,6 @@ import hashlib
 from app.crud import save_document
 
 BASE_DIRECTORY = Path(__file__).resolve().parent.parent
-PDF_PATH = BASE_DIRECTORY / "data" / "ct200_manual.pdf"
 
 heading_pattern = re.compile(
     r'^\d+(?:\.\d+)*\.?\s+.+'
@@ -34,79 +33,92 @@ def parse_heading(heading):
     }
 
 
-doc = fitz.open(PDF_PATH)
+def parse_pdf(pdf_path, filename, version):
 
-nodes = []
+    doc = fitz.open(pdf_path)
 
-current_heading = None
-current_content = []
+    nodes = []
 
-for page in doc:
+    current_heading = None
+    current_content = []
 
-    text = page.get_text()
-    lines = text.split("\n")
+    for page in doc:
 
-    for line in lines:
+        text = page.get_text()
+        lines = text.split("\n")
 
-        line = line.strip()
+        for line in lines:
 
-        if not line:
-            continue
+            line = line.strip()
 
-        if heading_pattern.match(line):
+            if not line:
+                continue
 
-            if current_heading:
+            if heading_pattern.match(line):
 
-                heading_info = parse_heading(current_heading)
+                if current_heading:
 
-                content = "\n".join(current_content)
+                    heading_info = parse_heading(current_heading)
 
-                content_hash = hashlib.sha256(
-                    content.encode("utf-8")
-                ).hexdigest()
+                    content = "\n".join(current_content)
 
-                nodes.append({
-                    "section_number": heading_info["section_number"],
-                    "title": heading_info["title"],
-                    "level": heading_info["level"],
-                    "parent_section": heading_info["parent_section"],
-                    "content": content,
-                    "content_hash": content_hash
-                })
+                    content_hash = hashlib.sha256(
+                        content.encode("utf-8")
+                    ).hexdigest()
 
-            current_heading = line
-            current_content = []
+                    nodes.append({
+                        "section_number": heading_info["section_number"],
+                        "title": heading_info["title"],
+                        "level": heading_info["level"],
+                        "parent_section": heading_info["parent_section"],
+                        "content": content,
+                        "content_hash": content_hash
+                    })
 
-        else:
+                current_heading = line
+                current_content = []
 
-            if current_heading:
-                current_content.append(line)
+            else:
 
-if current_heading:
+                if current_heading:
+                    current_content.append(line)
 
-    heading_info = parse_heading(current_heading)
+    if current_heading:
 
-    content = "\n".join(current_content)
+        heading_info = parse_heading(current_heading)
 
-    content_hash = hashlib.sha256(
-        content.encode("utf-8")
-    ).hexdigest()
+        content = "\n".join(current_content)
 
-    nodes.append({
-        "section_number": heading_info["section_number"],
-        "title": heading_info["title"],
-        "level": heading_info["level"],
-        "parent_section": heading_info["parent_section"],
-        "content": content,
-        "content_hash": content_hash
-    })
+        content_hash = hashlib.sha256(
+            content.encode("utf-8")
+        ).hexdigest()
 
-doc.close()
+        nodes.append({
+            "section_number": heading_info["section_number"],
+            "title": heading_info["title"],
+            "level": heading_info["level"],
+            "parent_section": heading_info["parent_section"],
+            "content": content,
+            "content_hash": content_hash
+        })
 
-save_document(
-    filename="ct200_manual.pdf",
-    version="v1",
-    nodes=nodes
-)
+    doc.close()
 
-print("Document saved successfully!")
+    save_document(
+        filename=filename,
+        version=version,
+        nodes=nodes
+    )
+
+    return nodes
+
+
+if __name__ == "__main__":
+
+    parse_pdf(
+        BASE_DIRECTORY / "data" / "ct200_manual.pdf",
+        "ct200_manual.pdf",
+        "v1"
+    )
+
+    print("Document saved successfully!")
