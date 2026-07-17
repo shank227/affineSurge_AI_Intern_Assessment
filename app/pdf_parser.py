@@ -1,7 +1,9 @@
 from pathlib import Path
 import fitz
 import re
+import hashlib
 
+from app.crud import save_document
 
 BASE_DIRECTORY = Path(__file__).resolve().parent.parent
 PDF_PATH = BASE_DIRECTORY / "data" / "ct200_manual.pdf"
@@ -57,12 +59,19 @@ for page in doc:
 
                 heading_info = parse_heading(current_heading)
 
+                content = "\n".join(current_content)
+
+                content_hash = hashlib.sha256(
+                    content.encode("utf-8")
+                ).hexdigest()
+
                 nodes.append({
                     "section_number": heading_info["section_number"],
                     "title": heading_info["title"],
                     "level": heading_info["level"],
                     "parent_section": heading_info["parent_section"],
-                    "content": "\n".join(current_content)
+                    "content": content,
+                    "content_hash": content_hash
                 })
 
             current_heading = line
@@ -77,26 +86,27 @@ if current_heading:
 
     heading_info = parse_heading(current_heading)
 
+    content = "\n".join(current_content)
+
+    content_hash = hashlib.sha256(
+        content.encode("utf-8")
+    ).hexdigest()
+
     nodes.append({
         "section_number": heading_info["section_number"],
         "title": heading_info["title"],
         "level": heading_info["level"],
         "parent_section": heading_info["parent_section"],
-        "content": "\n".join(current_content)
+        "content": content,
+        "content_hash": content_hash
     })
 
 doc.close()
 
+save_document(
+    filename="ct200_manual.pdf",
+    version="v1",
+    nodes=nodes
+)
 
-for node in nodes:
-
-    print("=" * 70)
-
-    print(f"Section Number : {node['section_number']}")
-    print(f"Title          : {node['title']}")
-    print(f"Level          : {node['level']}")
-    print(f"Parent Section : {node['parent_section']}")
-
-    print("\nContent:")
-    print(node["content"])
-    print()
+print("Document saved successfully!")

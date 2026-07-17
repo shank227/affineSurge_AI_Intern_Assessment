@@ -27,5 +27,6 @@ class Section(Base):
     parent_section = Column(String)
 
     content = Column(Text)
+    content_hash = Column(String)
 
     document = relationship("Document", back_populates="sections")
